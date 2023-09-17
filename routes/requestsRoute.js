@@ -6,7 +6,7 @@ const User = require("../models/usersModel");
 const Transaction = require("../models/transactionModel");
 
 const countryToCurrencyMapping = require("../data/currencies.json");
-const TRANSACTION_FEE = 0.35;
+const TRANSACTION_FEE = 1.30;
 
 // get all requests for a user
 
@@ -18,7 +18,7 @@ router.post("/get-all-requests-by-user", authMiddlewares, async (req, res) => {
       .populate("sender")
       .populate("receiver")
       .sort({ createdAt: -1 });
-
+      
     res.send({
       data: requests,
       message: "Requests fetched successfully",
@@ -67,11 +67,37 @@ router.post("/update-request-status", authMiddlewares, async (req, res) => {
       const senderCurrency = countryToCurrencyMapping[senderUser.country];
       const receiverCurrency = countryToCurrencyMapping[receiverUser.country];
 
+      if (senderCurrency === null) {
+        return res.send({
+          status: 500,
+          message: "Currency not supported",
+          success: false,
+        });
+      }
+
+      if (receiverCurrency === null) {
+        return res.send({
+          status: 500,
+          message: "Currency not supported",
+          success: false,
+        });
+      }
+
       // Fetch exchange rate using the API
       const { data: exchangeData } = await axios.get(
         `https://v6.exchangerate-api.com/v6/${process.env.exchange_rate_key}/pair/${senderCurrency}/${receiverCurrency}`
       );
-      const exchangeRate = exchangeData.conversion_rate;
+
+      let exchangeRate;
+      if(exchangeData.success !== "success") {
+        exchangeRate = exchangeData.conversion_rate;
+      } else {
+        return res.send({
+          status: 500,
+          message: "Exchange rate not available at the moment",
+          success: false,
+        });
+      }
 
       // Convert amount from sender's currency to receiver's currency
       const convertedAmount = parseFloat((amount * exchangeRate).toFixed(2));
@@ -92,12 +118,12 @@ router.post("/update-request-status", authMiddlewares, async (req, res) => {
       await newTransaction.save();
 
       // Deduct the amount from the sender
-      await User.findByIdAndUpdate(sender._id, {
+      await User.findByIdAndUpdate(receiver._id, {
         $inc: { balance: -amount },
       });
 
       // Add the amount to the receiver
-      await User.findByIdAndUpdate(receiver._id, {
+      await User.findByIdAndUpdate(sender._id, {
         $inc: { balance: convertedAmount - TRANSACTION_FEE },
       });
     }

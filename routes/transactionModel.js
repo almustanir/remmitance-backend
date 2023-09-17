@@ -6,13 +6,16 @@ const User = require("../models/usersModel");
 
 const stripe = require("stripe")(process.env.stripe_key);
 const { v4 } = require("uuid");
+const Mail = require("../services/email");
+const MailTemplate = require("../services/emailTemplate");
+
 
 const countryToCurrencyMapping = require("../data/currencies.json");
 
 // transer money from one account to another
 
 const MINIMUM_AMOUNT = 5; // $5 regardless of currency
-const TRANSACTION_FEE = 0.35;
+const TRANSACTION_FEE = 1.30;
 
 router.post("/transfer-funds", authMiddlewares, async (req, res) => {
   try {
@@ -46,7 +49,7 @@ router.post("/transfer-funds", authMiddlewares, async (req, res) => {
       receiver,
       amount: convertedAmount,
       type: "transfer",
-      reference: "transfer and converted with exchange rate API",
+      reference: "converted",
       status: "success",
       exchangeRate,
       senderCurrency,
@@ -64,6 +67,12 @@ router.post("/transfer-funds", authMiddlewares, async (req, res) => {
     await User.findByIdAndUpdate(receiver, {
       $inc: { balance: convertedAmount - TRANSACTION_FEE },
     });
+
+    const receiverTemplate = MailTemplate.receiverMailTemplate(senderUser.email, receiverUser.email, amount)
+    const senderTemplate = MailTemplate.receiverMailTemplate(senderUser.email, receiverUser.email, amount)
+
+    Mail("Transaction", receiverTemplate, receiverUser.email)
+    Mail("Transaction", senderTemplate, senderUser.email)
 
     return res.send({
       message: "Transaction successful",

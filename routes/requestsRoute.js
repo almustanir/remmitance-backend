@@ -124,7 +124,7 @@ router.post("/update-request-status", authMiddlewares, async (req, res) => {
 
       // Add the amount to the receiver
       await User.findByIdAndUpdate(receiver._id, {
-        $inc: { balance: convertedAmount - TRANSACTION_FEE },
+        $inc: { balance: -convertedAmount - TRANSACTION_FEE },
       });
     }
 

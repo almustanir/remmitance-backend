@@ -118,12 +118,12 @@ router.post("/update-request-status", authMiddlewares, async (req, res) => {
       await newTransaction.save();
 
       // Deduct the amount from the sender
-      await User.findByIdAndUpdate(receiver._id, {
-        $inc: { balance: -amount },
+      await User.findByIdAndUpdate(sender._id, {
+        $inc: { balance: amount },
       });
 
       // Add the amount to the receiver
-      await User.findByIdAndUpdate(sender._id, {
+      await User.findByIdAndUpdate(receiver._id, {
         $inc: { balance: convertedAmount - TRANSACTION_FEE },
       });
     }

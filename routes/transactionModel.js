@@ -14,8 +14,8 @@ const countryToCurrencyMapping = require("../data/currencies.json");
 
 // transer money from one account to another
 
-const MINIMUM_AMOUNT = 5; // $5 regardless of currency
-const TRANSACTION_FEE = 1.30;
+const MINIMUM_AMOUNT = 3; // $5 regardless of currency
+const TRANSACTION_FEE = 0.35;
 
 router.post("/transfer-funds", authMiddlewares, async (req, res) => {
   try {
@@ -49,7 +49,7 @@ router.post("/transfer-funds", authMiddlewares, async (req, res) => {
       receiver,
       amount: convertedAmount,
       type: "transfer",
-      reference: "converted",
+      reference: "convert & send",
       status: "success",
       exchangeRate,
       senderCurrency,
@@ -167,7 +167,7 @@ router.post("/deposit-funds", authMiddlewares, async (req, res) => {
         idempotencyKey: v4(),
       }
     );
-
+      console.log("charge",charge)
     // save the transaction
     if (charge.status === "succeeded") {
       const newTransaction = new Transaction({

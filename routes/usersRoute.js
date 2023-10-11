@@ -23,6 +23,9 @@ router.post("/register", async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const harshedPassword = await bcrypt.hash(req.body.password, salt);
     req.body.password = harshedPassword;
+    
+    req.body._id = (Math.floor(Math.random() * 9000000000) + 1000000000)+'';
+
     const newUser = new User(req.body);
     await newUser.save();
     res.send({

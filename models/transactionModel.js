@@ -7,12 +7,12 @@ const transactionSchema = new mongoose.Schema(
       required: true,
     },
     sender: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.String,
       ref: "users",
       required: true,
     },
     receiver: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.String,
       ref: "users",
       required: true,
     },

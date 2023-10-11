@@ -4,6 +4,7 @@ const cors = require("cors");
 const app = express();
 const helmet = require("helmet");
 require("dotenv").config();
+
 const dbConfig = require("./config/dbConfig");
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));

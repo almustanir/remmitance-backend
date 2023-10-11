@@ -6,7 +6,7 @@ const User = require("../models/usersModel");
 const Transaction = require("../models/transactionModel");
 
 const countryToCurrencyMapping = require("../data/currencies.json");
-const TRANSACTION_FEE = 1.30;
+const TRANSACTION_FEE = 0.35;
 
 // get all requests for a user
 
@@ -18,7 +18,25 @@ router.post("/get-all-requests-by-user", authMiddlewares, async (req, res) => {
       .populate("sender")
       .populate("receiver")
       .sort({ createdAt: -1 });
-      
+
+
+    for (let request of requests) {
+      const senderCurrency = countryToCurrencyMapping[request.sender.country];
+      const receiverCurrency = countryToCurrencyMapping[request.receiver.country];
+
+      // Fetch exchange rate using the API
+      const { data: exchangeData } = await axios.get(
+        `https://v6.exchangerate-api.com/v6/${process.env.exchange_rate_key}/pair/${senderCurrency}/${receiverCurrency}`
+      );
+      console.log(exchangeData);
+      const exchangeRate = exchangeData.conversion_rate;
+      const convertedAmount = parseFloat((request.amount * exchangeRate).toFixed(2));
+      request.convertedAmount = convertedAmount;
+      request.currency = exchangeData.target_code;
+
+    }
+
+
     res.send({
       data: requests,
       message: "Requests fetched successfully",
@@ -89,7 +107,7 @@ router.post("/update-request-status", authMiddlewares, async (req, res) => {
       );
 
       let exchangeRate;
-      if(exchangeData.success !== "success") {
+      if (exchangeData.success !== "success") {
         exchangeRate = exchangeData.conversion_rate;
       } else {
         return res.send({
